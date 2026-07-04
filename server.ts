@@ -86,6 +86,9 @@ const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB limit (adjust as needed)
 
+// Serve uploads statically (configured once)
+app.use('/uploads', express.static(uploadDir));
+
 // Endpoint to upload, convert to 720p, and hook into Basma logic.
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   console.log('-> STARTING VIDEO UPLOAD & CONVERSION');
@@ -96,18 +99,17 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   const outputPath = path.join(uploadDir, outputFilename);
 
   try {
-    // Protect the server from crashing by wrapping conversion in try-catch
+    // Await conversion before doing anything else
     await convertVideoTo720p(inputPath, outputPath);
+
+    // Signal that processing finished and we are about to send the file
+    console.log('-> PROCESSING FINISHED, SENDING FILE');
 
     // Integrate with Basma logic: update application state with the converted video
     const newState = updateBasmaWithVideo(outputPath);
 
     // Return a safe relative URL for the frontend to fetch the converted video
     const publicUrl = `/uploads/${path.basename(outputPath)}`;
-
-    // Ensure uploads folder is served as static (if not already)
-    // Note: we only add this once; adding again is harmless in express.
-    app.use('/uploads', express.static(uploadDir));
 
     // Clean up the original uploaded file asynchronously (do not await to keep response fast)
     fs.unlink(inputPath, (err) => {
