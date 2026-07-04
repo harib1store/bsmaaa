@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import multer from 'multer';
@@ -10,17 +9,17 @@ import fs from 'fs';
 
 dotenv.config();
 
-// Set ffmpeg path using environment override or @ffmpeg-installer fallback
+// Prefer an explicit FFMPEG_PATH from the environment, otherwise use the system ffmpeg binary
 try {
-  const ffmpegPath = process.env.FFMPEG_PATH || ffmpegInstaller.path || '';
+  const ffmpegPath = process.env.FFMPEG_PATH || '/usr/bin/ffmpeg';
   if (ffmpegPath) {
     ffmpeg.setFfmpegPath(ffmpegPath);
     console.log('ffmpeg path set to:', ffmpegPath);
   } else {
-    console.warn('No ffmpeg path found in FFMPEG_PATH or @ffmpeg-installer/ffmpeg.');
+    console.warn('No ffmpeg path found in FFMPEG_PATH or system path.');
   }
 } catch (e) {
-  console.warn('Could not set ffmpeg path from FFMPEG_PATH or ffmpeg-installer:', e);
+  console.warn('Could not set ffmpeg path from FFMPEG_PATH or system ffmpeg:', e);
 }
 
 const app = express();
