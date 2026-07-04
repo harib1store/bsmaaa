@@ -28,7 +28,7 @@ function getGeminiClient() {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("رمز Gemini API Key غير مهيأ بعد. يرجى تهيئة رمز الاختصار من قائمة الإعدادات (Settings > Secrets) في بيئة AI Studio لتف�[...]");
+      throw new Error("رمز Gemini API Key غير مهيأ بعد. يرجى تهيئة رمز الاختصار من قائمة الإعدادات (Settings > Secrets) في بيئة AI Studio.");
     }
     aiInstance = new GoogleGenAI({
       apiKey: apiKey,
@@ -187,22 +187,22 @@ app.post("/api/optimize-text", async (req, res) => {
 
     if (platform === "facebook") {
       suggestedHashtags = ["#تفاعل_فيسبوك", "#المحتوى_الأصلي", "#بصمة_الوصول", "#اكسبلور_2026", "#مكافحة_الحظر"];
-      targetPlatformTip = "خوارزمية فيسبوك تمنع المنشورات التي تحتوي روابط مضللة أو ترويجية مباشرة. قمنا بتنظيف منشورك[...]
+      targetPlatformTip = "خوارزمية فيسبوك تمنع المنشورات التي تحتوي روابط مضللة أو ترويجية مباشرة. قمنا بتنظيف منشورك.";
     } else if (platform === "twitter") {
       suggestedHashtags = ["#التريند_الآن", "#منصة_اكس_العربية", "#هاشتاق_الموسم", "#بصمة_ظهور", "#ميديا_اليوم"];
-      targetPlatformTip = "خوارزمية منصة X تكافئ التميز اللغوي والأيقونات المنتشرة حالياً. لتخطي Shadowban، تجنب الردود الم[...]
+      targetPlatformTip = "خوارزمية منصة X تكافئ التميز اللغوي والأيقونات المنتشرة حالياً. لتخطي Shadowban، تجنب الردود المباشرة والمحتوى المتكرر.";
     } else if (platform === "instagram") {
       suggestedHashtags = ["#explore_page", "#انستجرام_العائله", "#صناع_محتوى", "#بصمتي", "#فيديو_اليوم"];
-      targetPlatformTip = "إنستغرام يعاقب النسخ الحرفي. تعديل هذا النص مع تغيير بصمة الصورة عبر التطبيق سيمنع تمييز الم[...]
+      targetPlatformTip = "إنستغرام يعاقب النسخ الحرفي. تعديل هذا النص مع تغيير بصمة الصورة عبر التطبيق سيمنع تمييز المحتوى.";
     } else {
       suggestedHashtags = ["#محتوى_شائع", "#بصمة_رقمية", "#تخطي_الخوارزمية", "#ريتش_عالي", "#الحساب_الآمن"];
-      targetPlatformTip = "ملاحظة: تم استخدام وضع الفلترة المحلي الآمن لتخطي قيود فحص الخوارزميات وروبوتات المراقبة بن[...]
+      targetPlatformTip = "ملاحظة: تم استخدام وضع الفلترة المحلي الآمن لتخطي قيود فحص الخوارزميات وروبوتات المراقبة بشكل آمن.";
     }
 
     return {
       optimizedText: processedText,
       originalFlaggedWords: flaggedFound.length > 0 ? flaggedFound : ["رقابة تلقائية"],
-      replacementsExplanation: `تم تنشيط المحرك الاحتياطي المحلي الذاتي لعدم توفر خادم السحاب المؤقت (${reason}). بدائل التموي[...]
+      replacementsExplanation: `تم تنشيط المحرك الاحتياطي المحلي الذاتي لعدم توفر خادم السحاب المؤقت (${reason}). بدائل التمويج الآمنة اختيرت لتقليل مخاطر الحجب.`,
       suggestedHashtags,
       targetPlatformTip,
       isFallback: true
@@ -217,7 +217,7 @@ app.post("/api/optimize-text", async (req, res) => {
 تحليل وتعديل النص العربي أو الإنجليزي التالي لتحقيق الأهداف التالية:
 1. **فلترة الكلمات الحساسة والخاضعة للتقييد**: استبدل الكلمات التي قد تسبب حظراً للمنشور أو تقليلاً لنسبة ارت[...]
 2. **تحسين أسلوب التفاعل وصياغة جذابة**: اجعل الأسلوب يحفز التفاعل والمشاركة من خلال جمل افتتاحية قوية وتساؤل[...]
-3. **الأيقونات التعبيرية المناسبة**: أضف أيقونات تعبيرية (emojis) جذابة في سياق الموضوع لتسهيل القراءة وتجميل الم�[...]
+3. **الأيقونات التعبيرية المناسبة**: أضف أيقونات تعبيرية (emojis) جذابة في سياق الموضوع لتسهيل القراءة وتجميل ال�[...]
 4. **الهاشتاغات الرائجة والمثيرة للنشاط (Interactive Hashtags)**: اقترح قائمة من 5 إلى 10 هاشتاغات حديثة تلائم طبيعة المن�[...]
 
 النص المراد تعديله:
@@ -274,7 +274,7 @@ app.post("/api/optimize-text", async (req, res) => {
     return res.json({ ...data, isFallback: false });
   } catch (error: any) {
     console.warn("API limit or issue detected. Engaging high-fidelity local Arabic fallback filter engine...", error.message || error);
-    const reasonLabel = error.message && error.message.includes("quota") ? "نفاد حصة الطلبات المجانية المؤقتة" : "تعذر الاتصال بمزود الذكاء الاص�[...]
+    const reasonLabel = error.message && error.message.includes("quota") ? "نفاد حصة الطلبات المجانية المؤقتة" : "تعذر الاتصال بمزود الذكاء الاصطناعي الخارجي";
     try {
       const fallbackData = runLocalFallback(reasonLabel);
       return res.json(fallbackData);
