@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import ffmpeg from 'fluent-ffmpeg';
+import ffmpegStatic from 'ffmpeg-static';
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import multer from 'multer';
@@ -9,13 +10,17 @@ import fs from 'fs';
 
 dotenv.config();
 
-// If you have a custom ffmpeg binary path in your environment, set it here so fluent-ffmpeg will use it.
-if (process.env.FFMPEG_PATH) {
-  try {
-    ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
-  } catch (e) {
-    console.warn('Could not set ffmpeg path from FFMPEG_PATH environment variable:', e);
+// تعيين مسار ffmpeg: جرّب أولاً متغير البيئة، وإلا استخدم ffmpeg-static كحل احتياطي
+try {
+  const ffmpegPath = process.env.FFMPEG_PATH || ffmpegStatic || '';
+  if (ffmpegPath) {
+    ffmpeg.setFfmpegPath(ffmpegPath);
+    console.log('ffmpeg path set to:', ffmpegPath);
+  } else {
+    console.warn('No ffmpeg path found in FFMPEG_PATH or ffmpeg-static.');
   }
+} catch (e) {
+  console.warn('Could not set ffmpeg path from FFMPEG_PATH or ffmpeg-static:', e);
 }
 
 const app = express();
@@ -53,8 +58,14 @@ export const convertVideoTo720p = (inputPath: string, outputPath: string) => {
       .size('?x720')
       .videoCodec('libx264')
       .output(outputPath)
-      .on('end', () => resolve(outputPath))
-      .on('error', (err) => reject(err))
+      .on('end', () => {
+        console.log('ffmpeg conversion finished:', outputPath);
+        resolve(outputPath);
+      })
+      .on('error', (err) => {
+        console.error('ffmpeg conversion error:', err);
+        reject(err);
+      })
       .run();
   });
 };
@@ -104,9 +115,9 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
 
     return res.json({ success: true, video: publicUrl, basma: newState });
   } catch (err: any) {
-    console.error('Video conversion failed:', err);
+    console.error('Video conversion failed (upload-video):', err);
     // Attempt to clean input file even on error
-    try { fs.unlinkSync(inputPath); } catch (e) { /* ignore */ }
+    try { fs.unlinkSync(inputPath); } catch (e) { console.warn('Failed to cleanup input file after error', e); }
     // Do NOT crash the server; return a controlled error response
     return res.status(500).json({ error: 'Conversion failed', details: err?.message || String(err) });
   }
