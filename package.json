@@ -24,7 +24,8 @@
     "fluent-ffmpeg": "^2.1.2",
     "@types/fluent-ffmpeg": "latest",
     "multer": "latest",
-    "ffmpeg-static": "latest"
+    "ffmpeg-static": "latest",
+    "@ffmpeg-installer/ffmpeg": "latest"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
