@@ -4,8 +4,19 @@ import { createServer as createViteServer } from "vite";
 import ffmpeg from 'fluent-ffmpeg';
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import multer from 'multer';
+import fs from 'fs';
 
 dotenv.config();
+
+// If you have a custom ffmpeg binary path in your environment, set it here so fluent-ffmpeg will use it.
+if (process.env.FFMPEG_PATH) {
+  try {
+    ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
+  } catch (e) {
+    console.warn('Could not set ffmpeg path from FFMPEG_PATH environment variable:', e);
+  }
+}
 
 const app = express();
 const PORT = 3000;
@@ -33,6 +44,9 @@ function getGeminiClient() {
 
 app.use(express.json({ limit: "50mb" }));
 
+// -------------------------
+// Video conversion helper
+// -------------------------
 export const convertVideoTo720p = (inputPath: string, outputPath: string) => {
   return new Promise((resolve, reject) => {
     ffmpeg(inputPath)
@@ -44,6 +58,59 @@ export const convertVideoTo720p = (inputPath: string, outputPath: string) => {
       .run();
   });
 };
+
+// In-memory "Basma" state. Replace or extend with your real application logic.
+const basmaState: { lastUpdatedVideo?: string } = {};
+
+function updateBasmaWithVideo(videoPath: string) {
+  // This function represents the logic that "changes البسمة" in your application.
+  // Replace this with calls to your real application services, database updates, or events.
+  basmaState.lastUpdatedVideo = videoPath;
+  console.log('Basma state updated with video:', videoPath);
+  return basmaState;
+}
+
+// Multer setup for handling uploads (temporary storage in uploads/)
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const upload = multer({ dest: uploadDir, limits: { fileSize: 200 * 1024 * 1024 } }); // 200MB limit (adjust as needed)
+
+// Endpoint to upload, convert to 720p, and hook into Basma logic.
+app.post('/api/upload-video', upload.single('video'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'video file required' });
+
+  const inputPath = req.file.path;
+  const outputFilename = `${req.file.filename}-720p.mp4`;
+  const outputPath = path.join(uploadDir, outputFilename);
+
+  try {
+    // Protect the server from crashing by wrapping conversion in try-catch
+    await convertVideoTo720p(inputPath, outputPath);
+
+    // Integrate with Basma logic: update application state with the converted video
+    const newState = updateBasmaWithVideo(outputPath);
+
+    // Return a safe relative URL for the frontend to fetch the converted video
+    const publicUrl = `/uploads/${path.basename(outputPath)}`;
+
+    // Ensure uploads folder is served as static (if not already)
+    // Note: we only add this once; adding again is harmless in express.
+    app.use('/uploads', express.static(uploadDir));
+
+    // Clean up the original uploaded file asynchronously (do not await to keep response fast)
+    fs.unlink(inputPath, (err) => {
+      if (err) console.warn('Failed to remove temp input file', inputPath, err);
+    });
+
+    return res.json({ success: true, video: publicUrl, basma: newState });
+  } catch (err: any) {
+    console.error('Video conversion failed:', err);
+    // Attempt to clean input file even on error
+    try { fs.unlinkSync(inputPath); } catch (e) { /* ignore */ }
+    // Do NOT crash the server; return a controlled error response
+    return res.status(500).json({ error: 'Conversion failed', details: err?.message || String(err) });
+  }
+});
 
 // Route to analyze and optimize the user Arabic/English post text
 app.post("/api/optimize-text", async (req, res) => {
@@ -150,7 +217,7 @@ app.post("/api/optimize-text", async (req, res) => {
 تحليل وتعديل النص العربي أو الإنجليزي التالي لتحقيق الأهداف التالية:
 1. **فلترة الكلمات الحساسة والخاضعة للتقييد**: استبدل الكلمات التي قد تسبب حظراً للمنشور أو تقليلاً لنسبة ارت[...]
 2. **تحسين أسلوب التفاعل وصياغة جذابة**: اجعل الأسلوب يحفز التفاعل والمشاركة من خلال جمل افتتاحية قوية وتساؤل[...]
-3. **الأيقونات التعبيرية المناسبة**: أضف أيقونات تعبيرية (emojis) جذابة في سياق الموضوع لتسهيل القراءة وتجميل ال�[...]
+3. **الأيقونات التعبيرية المناسبة**: أضف أيقونات تعبيرية (emojis) جذابة في سياق الموضوع لتسهيل القراءة وتجميل الم�[...]
 4. **الهاشتاغات الرائجة والمثيرة للنشاط (Interactive Hashtags)**: اقترح قائمة من 5 إلى 10 هاشتاغات حديثة تلائم طبيعة المن�[...]
 
 النص المراد تعديله:
