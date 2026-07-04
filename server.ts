@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegStatic from 'ffmpeg-static';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import multer from 'multer';
@@ -10,28 +10,17 @@ import fs from 'fs';
 
 dotenv.config();
 
-// تعيين مسار ffmpeg: جرّب أولاً متغير البيئة، وإلا استخدم ffmpeg-static كحل احتياطي
+// Set ffmpeg path using environment override or @ffmpeg-installer fallback
 try {
-  const ffmpegPath = process.env.FFMPEG_PATH || ffmpegStatic || '';
-
-  // إذا وُجِد ثنائي ffmpeg من ffmpeg-static حاول منح صلاحية التنفيذ
-  if (ffmpegStatic) {
-    try {
-      fs.chmodSync(ffmpegStatic, 0o755);
-      console.log('Set execute permissions on ffmpeg-static binary');
-    } catch (chmodErr) {
-      console.warn('Failed to set execute permissions on ffmpeg-static binary:', chmodErr);
-    }
-  }
-
+  const ffmpegPath = process.env.FFMPEG_PATH || ffmpegInstaller.path || '';
   if (ffmpegPath) {
     ffmpeg.setFfmpegPath(ffmpegPath);
     console.log('ffmpeg path set to:', ffmpegPath);
   } else {
-    console.warn('No ffmpeg path found in FFMPEG_PATH or ffmpeg-static.');
+    console.warn('No ffmpeg path found in FFMPEG_PATH or @ffmpeg-installer/ffmpeg.');
   }
 } catch (e) {
-  console.warn('Could not set ffmpeg path from FFMPEG_PATH or ffmpeg-static:', e);
+  console.warn('Could not set ffmpeg path from FFMPEG_PATH or ffmpeg-installer:', e);
 }
 
 const app = express();
@@ -74,7 +63,7 @@ export const convertVideoTo720p = (inputPath: string, outputPath: string) => {
         resolve(outputPath);
       })
       .on('error', (err) => {
-        console.error('ffmpeg conversion error:', err);
+        console.error('--- FFMPEG FATAL ERROR ---', err);
         reject(err);
       })
       .run();
@@ -99,6 +88,7 @@ const upload = multer({ dest: uploadDir, limits: { fileSize: 200 * 1024 * 1024 }
 
 // Endpoint to upload, convert to 720p, and hook into Basma logic.
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
+  console.log('-> STARTING VIDEO UPLOAD & CONVERSION');
   if (!req.file) return res.status(400).json({ error: 'video file required' });
 
   const inputPath = req.file.path;
