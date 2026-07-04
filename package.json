@@ -23,8 +23,7 @@
     "vite": "^6.2.3",
     "fluent-ffmpeg": "^2.1.2",
     "@types/fluent-ffmpeg": "latest",
-    "multer": "latest",
-    "@ffmpeg-installer/ffmpeg": "latest"
+    "multer": "latest"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
