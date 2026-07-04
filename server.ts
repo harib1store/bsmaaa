@@ -13,6 +13,17 @@ dotenv.config();
 // تعيين مسار ffmpeg: جرّب أولاً متغير البيئة، وإلا استخدم ffmpeg-static كحل احتياطي
 try {
   const ffmpegPath = process.env.FFMPEG_PATH || ffmpegStatic || '';
+
+  // إذا وُجِد ثنائي ffmpeg من ffmpeg-static حاول منح صلاحية التنفيذ
+  if (ffmpegStatic) {
+    try {
+      fs.chmodSync(ffmpegStatic, 0o755);
+      console.log('Set execute permissions on ffmpeg-static binary');
+    } catch (chmodErr) {
+      console.warn('Failed to set execute permissions on ffmpeg-static binary:', chmodErr);
+    }
+  }
+
   if (ffmpegPath) {
     ffmpeg.setFfmpegPath(ffmpegPath);
     console.log('ffmpeg path set to:', ffmpegPath);
@@ -116,6 +127,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     return res.json({ success: true, video: publicUrl, basma: newState });
   } catch (err: any) {
     console.error('Video conversion failed (upload-video):', err);
+    console.error('FFMPEG_ERROR_DETAILS:', err);
     // Attempt to clean input file even on error
     try { fs.unlinkSync(inputPath); } catch (e) { console.warn('Failed to cleanup input file after error', e); }
     // Do NOT crash the server; return a controlled error response
