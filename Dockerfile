@@ -4,7 +4,7 @@
 FROM node:18-bullseye AS builder
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y ffmpeg ca-certificates --no-install-rec
 
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
 
 # Copy build artifacts
 COPY --from=builder /usr/src/app/dist ./dist
