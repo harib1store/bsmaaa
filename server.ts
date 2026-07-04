@@ -17,7 +17,7 @@ function getGeminiClient() {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("رمز Gemini API Key غير مهيأ بعد. يرجى تهيئة رمز الاختصار من قائمة الإعدادات (Settings > Secrets) في بيئة AI Studio ل�[...]");
+      throw new Error("رمز Gemini API Key غير مهيأ بعد. يرجى تهيئة رمز الاختصار من قائمة الإعدادات (Settings > Secrets) في بيئة AI Studio لتف�[...]");
     }
     aiInstance = new GoogleGenAI({
       apiKey: apiKey,
@@ -32,6 +32,18 @@ function getGeminiClient() {
 }
 
 app.use(express.json({ limit: "50mb" }));
+
+export const convertVideoTo720p = (inputPath: string, outputPath: string) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .size('?x720')
+      .videoCodec('libx264')
+      .output(outputPath)
+      .on('end', () => resolve(outputPath))
+      .on('error', (err) => reject(err))
+      .run();
+  });
+};
 
 // Route to analyze and optimize the user Arabic/English post text
 app.post("/api/optimize-text", async (req, res) => {
@@ -108,22 +120,22 @@ app.post("/api/optimize-text", async (req, res) => {
 
     if (platform === "facebook") {
       suggestedHashtags = ["#تفاعل_فيسبوك", "#المحتوى_الأصلي", "#بصمة_الوصول", "#اكسبلور_2026", "#مكافحة_الحظر"];
-      targetPlatformTip = "خوارزمية فيسبوك تمنع المنشورات التي تحتوي روابط مضللة أو ترويجية مباشرة. قمنا بتنظيف منشورك[...];
+      targetPlatformTip = "خوارزمية فيسبوك تمنع المنشورات التي تحتوي روابط مضللة أو ترويجية مباشرة. قمنا بتنظيف منشورك[...]
     } else if (platform === "twitter") {
       suggestedHashtags = ["#التريند_الآن", "#منصة_اكس_العربية", "#هاشتاق_الموسم", "#بصمة_ظهور", "#ميديا_اليوم"];
-      targetPlatformTip = "خوارزمية منصة X تكافئ التميز اللغوي والأيقونات المنتشرة حالياً. لتخطي Shadowban، تجنب الردود الم[...];
+      targetPlatformTip = "خوارزمية منصة X تكافئ التميز اللغوي والأيقونات المنتشرة حالياً. لتخطي Shadowban، تجنب الردود الم[...]
     } else if (platform === "instagram") {
       suggestedHashtags = ["#explore_page", "#انستجرام_العائله", "#صناع_محتوى", "#بصمتي", "#فيديو_اليوم"];
-      targetPlatformTip = "إنستغرام يعاقب النسخ الحرفي. تعديل هذا النص مع تغيير بصمة الصورة عبر التطبيق سيمنع تمييز الم[...];
+      targetPlatformTip = "إنستغرام يعاقب النسخ الحرفي. تعديل هذا النص مع تغيير بصمة الصورة عبر التطبيق سيمنع تمييز الم[...]
     } else {
       suggestedHashtags = ["#محتوى_شائع", "#بصمة_رقمية", "#تخطي_الخوارزمية", "#ريتش_عالي", "#الحساب_الآمن"];
-      targetPlatformTip = "ملاحظة: تم استخدام وضع الفلترة المحلي الآمن لتخطي قيود فحص الخوارزميات وروبوتات المراقبة بن[...];
+      targetPlatformTip = "ملاحظة: تم استخدام وضع الفلترة المحلي الآمن لتخطي قيود فحص الخوارزميات وروبوتات المراقبة بن[...]
     }
 
     return {
       optimizedText: processedText,
       originalFlaggedWords: flaggedFound.length > 0 ? flaggedFound : ["رقابة تلقائية"],
-      replacementsExplanation: `تم تنشيط المحرك الاحتياطي المحلي الذاتي لعدم توفر خادم السحاب المؤقت (${reason}). بدائل التموي[...];
+      replacementsExplanation: `تم تنشيط المحرك الاحتياطي المحلي الذاتي لعدم توفر خادم السحاب المؤقت (${reason}). بدائل التموي[...]
       suggestedHashtags,
       targetPlatformTip,
       isFallback: true
@@ -195,7 +207,7 @@ app.post("/api/optimize-text", async (req, res) => {
     return res.json({ ...data, isFallback: false });
   } catch (error: any) {
     console.warn("API limit or issue detected. Engaging high-fidelity local Arabic fallback filter engine...", error.message || error);
-    const reasonLabel = error.message && error.message.includes("quota") ? "نفاد حصة الطلبات المجانية المؤقتة" : "تعذر الاتصال بمزود الذكاء الاص�[...];
+    const reasonLabel = error.message && error.message.includes("quota") ? "نفاد حصة الطلبات المجانية المؤقتة" : "تعذر الاتصال بمزود الذكاء الاص�[...]
     try {
       const fallbackData = runLocalFallback(reasonLabel);
       return res.json(fallbackData);
